@@ -392,6 +392,8 @@ def commands(fil=None, guid=None):
 
     def create_users(prefix='', suffix=''):
         """ Method that creates users"""
+        call("{}htpasswd -c /etc/origin/master/htpasswd".format(prefix),
+             shell=True)
         for u in ['amy', 'andrew', 'brian', 'betty']:
             call("{}htpasswd -b /etc/origin/master/htpasswd {} p@ss1!{}".format(
                 prefix, u, suffix),
@@ -421,8 +423,8 @@ def commands(fil=None, guid=None):
     ]
 
     recycler = [
-        'ansible nodes - m shell - a "docker pull registry.access.redhat.com/openshift3/ose-recycler:latest"',
-        'ansible nodes - m shell - a "docker tag registry.access.redhat.com/openshift3/ose-recycler:latest registry.access.redhat.com/openshift3/ose-recycler:v3.10.34"'
+        'ansible nodes -m shell -a "docker pull registry.access.redhat.com/openshift3/ose-recycler:latest"',
+        'ansible nodes -m shell -a "docker tag registry.access.redhat.com/openshift3/ose-recycler:latest registry.access.redhat.com/openshift3/ose-recycler:v3.10.34"'
     ]
 
     multitenancy = [
@@ -480,13 +482,6 @@ def commands(fil=None, guid=None):
                         'Copy the .kube directory to the bastion host so we '
                         'can run oc commands from host!')
                 call(c, shell=True)
-        elif fil == 'oc':
-            for i, o in enumerate(multitenancy):
-                if i == 0:
-                    print('Adding role admin to user alpha for project-alpha!')
-                elif i == 1:
-                    print('Adding role admin to user beta for project-beta!')
-                call(o, shell=True)
         elif fil == 'recycle':
             for i, r in enumerate(recycler):
                 if i == 0:
@@ -512,7 +507,7 @@ def commands(fil=None, guid=None):
                 elif i == 2:
                     print('Creating users!')
                     create_users()
-                    print('Creating users onn masters!')
+                    print('Creating users on masters!')
                     create_users(prefix="ansible masters -m shell -a '",
                                  suffix="'")
                 elif i == 7:
@@ -545,8 +540,9 @@ def create_nfs_export():
         call(
             '''ansible nfs -m shell -a "echo '/srv/nfs/user-vols/pv{} *(rw,root_squash)' >> /etc/exports.d/openshift-uservols.exports"'''.format(
                 pv), shell=True)
-    call('ansible nfs -m shell -a "chown -R nfsnobody.nfsnobody  /srv/nfs; chmod -R 777 /srv/nfs; systemctl restart nfs-server"',
-         shell=True)
+    call(
+        'ansible nfs -m shell -a "chown -R nfsnobody.nfsnobody  /srv/nfs; chmod -R 777 /srv/nfs; systemctl restart nfs-server"',
+        shell=True)
 
 
 def create_pv_def_file(volume=None,

@@ -374,7 +374,7 @@ def set_guid_on_all_nodes(guid=None):
         checks = check.split('\n\n')
         exists = True
         for c in checks:
-            if c.split('>>')[1] == '' and exists:
+            if c.split('>>')[0] != '' and c.split('>>')[1] == '' and exists:
                 exists = False
         if not exists:
             print('Setting GUID on all nodes! ')

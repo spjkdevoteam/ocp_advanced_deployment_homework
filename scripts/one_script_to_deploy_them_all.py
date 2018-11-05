@@ -464,7 +464,7 @@ def commands(fil=None, guid=None):
     ]
 
     if fil is not None:
-        if fil == 'ansible':
+        if fil == 'installation':
             for i, c in enumerate(installation):
                 if i == 0:
                     print('Check that atomic-openshift-utils and '

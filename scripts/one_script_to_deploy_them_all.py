@@ -542,14 +542,10 @@ def create_nfs_export():
          shell=True)
     print('Creating NFS user volumes!')
     for pv in range(0, 50, 1):
-        call('ansible nfs -m shell -a '
-             '`echo "/srv/nfs/user-vols/pv{} *(rw,root_squash)" >> '
-             '/etc/exports.d/openshift-uservols.exports`'.format(pv),
-             shell=True)
-    call('ansible nfs -m shell -a '
-         '"chown -R nfsnobody.nfsnobody  /srv/nfs; '
-         'chmod -R 777 /srv/nfs; '
-         'systemctl restart nfs-server"',
+        call(
+            '''ansible nfs -m shell -a "echo '/srv/nfs/user-vols/pv{} *(rw,root_squash)' >> /etc/exports.d/openshift-uservols.exports"'''.format(
+                pv), shell=True)
+    call('ansible nfs -m shell -a "chown -R nfsnobody.nfsnobody  /srv/nfs; chmod -R 777 /srv/nfs; systemctl restart nfs-server"',
          shell=True)
 
 

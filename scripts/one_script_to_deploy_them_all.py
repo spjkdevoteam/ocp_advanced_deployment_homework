@@ -378,7 +378,7 @@ def set_guid_on_all_nodes(guid=None):
                 exists = False
         if not exists:
             print('Setting GUID on all nodes! ')
-            export = 'echo "export {}=$GUID" >> $HOME/.bashrc'.format(guid)
+            export = 'echo "export GUID={}" >> $HOME/.bashrc'.format(guid)
             call(export, shell=True)
             call("ansible all -m shell -a '{}'".format(export), shell=True)
         else:
@@ -537,8 +537,10 @@ def commands(fil=None, guid=None):
 
 def create_nfs_export():
     """ Method that creates nfs exports on support1"""
+    print('Creating folder on NFS node!')
     call('ansible nfs -m shell -a "mkdir -p /srv/nfs/user-vols/pv{0..50}"',
          shell=True)
+    print('Creating NFS user volumes!')
     for pv in range(0, 50, 1):
         call('ansible nfs -m shell -a '
              '`echo "/srv/nfs/user-vols/pv${} *(rw,root_squash)" >> '

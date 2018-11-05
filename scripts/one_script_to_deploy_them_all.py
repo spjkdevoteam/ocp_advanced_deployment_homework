@@ -429,8 +429,8 @@ def commands(fil=None, guid=None):
 
     multitenancy = [
         "oc new-project common-project --display-name='Common project'",
-        "oc new-project alpha-project --display-name='Alpha Corp' --node-selector='client=alpha'",
-        "oc new-project beta-project --display-name='Beta Corp' --node-selector='client=beta'",
+        "oc new-project alpha-project --display-name='Alpha Corp'", # --node-selector='client=alpha'",
+        "oc new-project beta-project --display-name='Beta Corp'", # --node-selector='client=beta'",
         "oc adm groups new alpha Amy Andrew",
         "oc adm groups new beta Brian Betty",
         "oc adm policy add-role-to-group admin alpha -n alpha-project",

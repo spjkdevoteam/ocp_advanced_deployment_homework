@@ -392,7 +392,7 @@ def commands(fil=None, guid=None):
 
     def create_users(prefix='', suffix=''):
         """ Method that creates users"""
-        call("{}htpasswd -c /etc/origin/master/htpasswd".format(prefix),
+        call("{}htpasswd -c /etc/origin/master/htpasswd common".format(prefix),
              shell=True)
         for u in ['amy', 'andrew', 'brian', 'betty']:
             call("{}htpasswd -b /etc/origin/master/htpasswd {} p@ss1!{}".format(

@@ -392,8 +392,8 @@ def commands(fil=None, guid=None):
 
     def create_users(prefix='', suffix=''):
         """ Method that creates users"""
-        call("{}htpasswd -c /etc/origin/master/htpasswd common".format(prefix),
-             shell=True)
+        # call("{}htpasswd -c /etc/origin/master/htpasswd common".format(prefix),
+        #      shell=True)
         for u in ['amy', 'andrew', 'brian', 'betty']:
             call("{}htpasswd -b /etc/origin/master/htpasswd {} p@ss1!{}".format(
                 prefix, u, suffix),
@@ -505,8 +505,8 @@ def commands(fil=None, guid=None):
                 if i == 0:
                     print('Creating projects!')
                 elif i == 2:
-                    print('Creating users!')
-                    create_users()
+                    # print('Creating users!')
+                    # create_users()
                     print('Creating users on masters!')
                     create_users(prefix="ansible masters -m shell -a '",
                                  suffix="'")

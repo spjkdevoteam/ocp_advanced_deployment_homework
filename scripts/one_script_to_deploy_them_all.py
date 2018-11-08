@@ -230,7 +230,7 @@ node4.5414.internal openshift_node_group_name='node-config-compute'
 support1.5414.internal
 '''
 
-project_tamplate = '''
+project_template = '''
 apiVersion: v1
 kind: Template
 metadata:
@@ -335,6 +335,28 @@ parameters:
 - name: PROJECT_REQUESTING_USER
 '''
 
+jenkins_pipeline = '''
+apiVersion: v1
+items:
+- kind: "BuildConfig"
+  apiVersion: "v1"
+  metadata:
+    name: "cicd-bc"
+  spec:
+    strategy:
+      type: "JenkinsPipeline"
+      jenkinsPipelineStrategy:
+        jenkinsfilePath: Jenkinsfile
+    source:
+      git:
+        ref: eap-7
+        uri: https://github.com/spjkdevoteam/openshift-tasks.git
+      type: Git
+
+kind: List
+metadata: {}
+'''
+
 
 def write_file(content=None, path=None):
     """ Method that writes content to hosts file"""
@@ -392,8 +414,6 @@ def commands(fil=None, guid=None):
 
     def create_users(prefix='', suffix=''):
         """ Method that creates users"""
-        # call("{}htpasswd -c /etc/origin/master/htpasswd common".format(prefix),
-        #      shell=True)
         for u in ['amy', 'andrew', 'brian', 'betty']:
             call("{}htpasswd -b /etc/origin/master/htpasswd {} p@ss1!{}".format(
                 prefix, u, suffix),
@@ -429,8 +449,10 @@ def commands(fil=None, guid=None):
 
     multitenancy = [
         "oc new-project common-project --display-name='Common project'",
-        "oc new-project alpha-project --display-name='Alpha Corp'", # --node-selector='client=alpha'",
-        "oc new-project beta-project --display-name='Beta Corp'", # --node-selector='client=beta'",
+        "oc new-project alpha-project --display-name='Alpha Corp'",
+        # --node-selector='client=alpha'",
+        "oc new-project beta-project --display-name='Beta Corp'",
+        # --node-selector='client=beta'",
         "oc adm groups new alpha Amy Andrew",
         "oc adm groups new beta Brian Betty",
         "oc adm policy add-role-to-group admin alpha -n alpha-project",
@@ -445,24 +467,20 @@ def commands(fil=None, guid=None):
         'oc new-app nodejs-mongo-persistent'
     ]
 
-    jenikins = [
+    jenkins = [
         "oc new-project cicd --description='CI/CD Tools Environment' --display-name='CICD - Jenkins'",
         "oc new-project cicd-dev --description='Openshift tasks Development' --display-name='Tasks - Development'",
         "oc new-project cicd-test --description='Openshift tasks Testing' --display-name='Tasks - Testing'",
         "oc new-project cicd-prod --description='Openshift tasks Production' --display-name='Tasks - Production'",
-        "oc new-app jenkins-persistent --param MEMORY_LIMIT=2Gi --param VOLUME_CAPACITY=4Gi -n cicd",
+        "oc new-app jenkins-persistent --param MEMORY_LIMIT=2Gi --param VOLUME_CAPACITY=4Gi -p ENABLE_OAUTH=false -e JENKINS_PASSWORD=homework -n cicd",
         "oc policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n cicd-dev",
         "oc policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n cicd-test",
         "oc policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n cicd-prod",
         "oc policy add-role-to-group system:image-puller system:serviceaccounts:cicd-dev -n cicd",
         "oc policy add-role-to-group system:image-puller system:serviceaccounts:cicd-test -n cicd",
         "oc policy add-role-to-group system:image-puller system:serviceaccounts:cicd-prod -n cicd",
-        "",
-        "",
-        "",
-        "",
-        "",
-        ""
+        "oc create -f jenkins_build_config.yaml -n cicd",
+        "oc start-build cicd-bc -n cicd"
     ]
 
     if fil is not None:
@@ -505,29 +523,18 @@ def commands(fil=None, guid=None):
                 if i == 0:
                     print('Creating projects!')
                 elif i == 2:
-                    # print('Creating users!')
-                    # create_users()
                     print('Creating users on masters!')
                     create_users(prefix="ansible masters -m shell -a '",
                                  suffix="'")
                 elif i == 7:
                     create_cluster_resource_quota()
                 call(s, shell=True)
-        elif fil == 'jenikins':
-            for i, s in enumerate(jenikins):
+        elif fil == 'jenkins':
+            for i, s in enumerate(jenkins):
                 if i == 0:
                     print('Creating projects!')
-                elif i == 4:
+                elif i == 10:
                     print('deploy Jenkins Pipeline!')
-                elif i == 5:
-                    print('Adding policy!')
-                    create_users()
-                    print('Creating users onn masters!')
-                    create_users(prefix="ansible masters -m shell -a '",
-                                 suffix="'")
-                elif i == 7:
-                    create_cluster_resource_quota()
-                call(s, shell=True)
 
 
 def create_nfs_export():
@@ -579,7 +586,8 @@ def main():
     pvs_folder = '/root/pvs'
 
     write_file(content=hosts_content, path='/etc/ansible/hosts')
-    write_file(content=project_tamplate, path='project_template.yml')
+    write_file(content=project_template, path='project_template.yml')
+    write_file(content=jenkins_pipeline, path='jenkins_build_config.yaml')
 
     guid = get_guid()
     set_guid_on_all_nodes(guid=guid)
@@ -608,6 +616,8 @@ def main():
     commands(fil='recycle')
 
     commands(fil='smoke', guid=guid)
+
+    commands(fil='jenkins')
 
     commands(fil='multitenancy')
 

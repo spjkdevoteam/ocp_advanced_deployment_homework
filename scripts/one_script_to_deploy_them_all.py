@@ -540,6 +540,11 @@ def commands(fil=None, guid=None):
                     print('Sleep 1 minute while for jenkins to be ready!')
                     sleep(60)
                 call(s, shell=True)
+            print('Verify on following link that Jenkins have successfully '
+                  'started \n '
+                  'https://jenkins-cicd.apps.5414.example.opentlc.com \n'
+                  'make sure to use following credentials: \n '
+                  'admin/homework\n')
 
 
 def create_nfs_export():

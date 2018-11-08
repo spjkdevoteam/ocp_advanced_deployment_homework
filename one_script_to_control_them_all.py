@@ -1,5 +1,7 @@
 """ Module that contains script for deploying HA cluster """
+import sys
 import json
+import getopt
 from os import system
 from time import sleep
 from os import makedirs
@@ -591,8 +593,8 @@ def create_pv_def_file(volume=None,
         print('Created def file for volume: {}'.format(volume))
 
 
-def main():
-    """ Main method"""
+def deploy():
+    """ Method for deploying cluster"""
     pvs_folder = '/root/pvs'
 
     write_file(content=hosts_content, path='/etc/ansible/hosts')
@@ -632,4 +634,40 @@ def main():
     commands(fil='multitenancy')
 
 
-main()
+def remove():
+    """ Method for removing cluster"""
+    scripts = [
+        'ansible-playbook /usr/share/ansible/openshift-ansible/playbooks/adhoc/uninstall.yml'
+        # , 'cat /root/pvs/* | oc delete -f -'
+        , 'ansible nodes -a "rm -rf /etc/origin"'
+        , 'ansible nfs -a "rm -rf /srv/nfs/*"'
+        , 'rm -rf /root/pvs'
+    ]
+    print('Running uninstall scripts!')
+    for s in scripts:
+        call(s, shell=True)
+
+
+if __name__ == '__main__':
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], 'o:', ['option='])
+    except getopt.GetoptError:
+        print(
+            'Usage: python one_script_to_control_them_all.py -o [deploy / remove] ')
+        sys.exit(2)
+    if len(sys.argv[1:]) < 2:
+        print(
+            'Usage: python one_script_to_control_them_all.py -o [deploy / remove] ')
+        sys.exit(2)
+    e = ''
+    p = ''
+    print("Let's start!")
+    for o, a in opts:
+        if o in ('-o', '--option'):
+            if a == 'deploy':
+                deploy()
+            elif a == 'remove':
+                remove()
+            else:
+                print('Please provide correct option!')
+                sys.exit(2)

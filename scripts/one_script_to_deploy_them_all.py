@@ -349,7 +349,7 @@ items:
         jenkinsfilePath: Jenkinsfile
     source:
       git:
-        ref: eap-7
+        ref: master
         uri: https://github.com/spjkdevoteam/openshift-tasks.git
       type: Git
 

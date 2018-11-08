@@ -1,6 +1,7 @@
 """ Module that contains script for deploying HA cluster """
 import json
 from os import system
+from time import sleep
 from os import makedirs
 from subprocess import call
 from subprocess import check_output
@@ -533,8 +534,11 @@ def commands(fil=None, guid=None):
             for i, s in enumerate(jenkins):
                 if i == 0:
                     print('Creating projects!')
-                elif i == 10:
+                elif i == 11:
                     print('deploy Jenkins Pipeline!')
+                elif i == 12:
+                    print('Sleep 1 minute while for jenkins to be ready!')
+                    sleep(60)
                 call(s, shell=True)
 
 

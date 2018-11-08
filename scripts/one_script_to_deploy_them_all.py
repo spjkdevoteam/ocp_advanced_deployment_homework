@@ -535,6 +535,7 @@ def commands(fil=None, guid=None):
                     print('Creating projects!')
                 elif i == 10:
                     print('deploy Jenkins Pipeline!')
+                call(s, shell=True)
 
 
 def create_nfs_export():

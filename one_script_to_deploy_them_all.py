@@ -336,7 +336,7 @@ parameters:
 - name: PROJECT_REQUESTING_USER
 '''
 
-jenkins_pipeline = '''
+jenkins_build_config = '''
 apiVersion: v1
 items:
 - kind: "BuildConfig"
@@ -597,7 +597,7 @@ def main():
 
     write_file(content=hosts_content, path='/etc/ansible/hosts')
     write_file(content=project_template, path='project_template.yml')
-    write_file(content=jenkins_pipeline, path='jenkins_build_config.yaml')
+    write_file(content=jenkins_build_config, path='jenkins_build_config.yaml')
 
     guid = get_guid()
     set_guid_on_all_nodes(guid=guid)

@@ -356,40 +356,27 @@ items:
               label 'maven'
             }
             stages {
+              stage('Checkout Source') {
+                steps {
+                  git branch: 'eap-7', url: 'https://github.com/spjkdevoteam/openshift-tasks.git'
+                }
+              }
               stage('Build App') {
                 steps {
-                  git branch: 'eap-7', url: 'http://gogs:3000/gogs/openshift-tasks.git'
-                  script {
-                      def pom = readMavenPom file: 'pom.xml'
-                      version = pom.version
-                  }
-                  sh "${mvnCmd} install -DskipTests=true"
+                  sh "mvn clean install -DskipTests"
                 }
               }
-              stage('Test') {
+              stage('Test App') {
                 steps {
-                  sh "${mvnCmd} test"
-                  step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'])
-                }
-              }
-              stage('Code Analysis') {
-                steps {
-                  script {
-                    sh "${mvnCmd} sonar:sonar -Dsonar.host.url=http://sonarqube:9000 -DskipTests=true"
-                  }
-                }
-              }
-              stage('Archive App') {
-                steps {
-                  sh "${mvnCmd} deploy -DskipTests=true -P nexus3"
+                  sh "mvn test"
                 }
               }
               stage('Create Image Builder') {
                 when {
                   expression {
                     openshift.withCluster() {
-                      openshift.withProject("cicd-dev") {
-                        return !openshift.selector("bc", "tasks").exists();
+                      openshift.withProject("cicd") {
+                        return !openshift.selector("bc", "tasks-bc").exists();
                       }
                     }
                   }
@@ -397,8 +384,8 @@ items:
                 steps {
                   script {
                     openshift.withCluster() {
-                      openshift.withProject("cicd-dev") {
-                        openshift.newBuild("--name=tasks", "--image-stream=jboss-eap70-openshift:1.5", "--binary=true")
+                      openshift.withProject("cicd") {
+                        openshift.newBuild("--name=tasks-bc", "--image-stream=jboss-eap70-openshift:1.5", "--binary")
                       }
                     }
                   }
@@ -406,13 +393,13 @@ items:
               }
               stage('Build Image') {
                 steps {
-                  sh "rm -rf oc-build && mkdir -p oc-build/deployments"
+                  sh "rm -rf oc-build && mkdir -p oc-build/deployments && mkdir -p oc-build/configuration"
                   sh "cp target/openshift-tasks.war oc-build/deployments/ROOT.war"
-                  
+                  sh "cp configuration/*.properties oc-build/configuration"
                   script {
                     openshift.withCluster() {
-                      openshift.withProject("cicd-dev") {
-                        openshift.selector("bc", "tasks").startBuild("--from-dir=oc-build", "--wait=true")
+                      openshift.withProject("cicd") {
+                        openshift.selector("bc", "tasks-bc").startBuild("--from-file=oc-build", "--wait")
                       }
                     }
                   }
@@ -616,8 +603,9 @@ def commands(fil=None, guid=None):
         "oc adm groups new beta Brian Betty",
         "oc adm policy add-role-to-group admin alpha -n alpha-project",
         "oc adm policy add-role-to-group admin beta -n beta-project",
-        "oc create -f project_template.yml",
-        '''ansible masters -m shell -a "sed -i 's/projectRequestTemplate.*/projectRequestTemplate\: \\"default\/project-request\\"/g' /etc/origin/master/master-config.yaml"''',
+        "oc label namespace default name=default",
+        "oc create -f project_template.yml -n default",
+        '''ansible masters -m shell -a "sed -i 's/projectRequestTemplate.*/projectRequestTemplate\: \\"default\\/project-request\\"/g' /etc/origin/master/master-config.yaml"''',
         "ansible masters -m shell -a'systemctl restart atomic-openshift-node'"
     ]
 
@@ -782,9 +770,9 @@ def deploy():
 
     commands(fil='smoke', guid=guid)
 
-    commands(fil='jenkins')
-
     commands(fil='multitenancy')
+
+    commands(fil='jenkins')
 
 
 def remove():

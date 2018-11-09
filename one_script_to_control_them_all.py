@@ -3,6 +3,7 @@ import sys
 import json
 import getopt
 from os import system
+from time import sleep
 from os import makedirs
 from subprocess import call
 from subprocess import check_output
@@ -691,7 +692,10 @@ def commands(fil=None, guid=None):
                 if i == 0:
                     print('Creating projects!')
                 elif i == 11:
-                    print('deploy Jenkins Pipeline!')
+                    print('create Jenkins Pipeline!')
+                elif i == 12:
+                    print('Sleep one minute before deployment!')
+                    sleep(60)
                 call(s, shell=True)
             print('Verify on following link that Jenkins have successfully '
                   'started \n '

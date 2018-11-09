@@ -5,11 +5,25 @@ a fully automated deployment of OpenShift.
 
 The person grading the assignment will 
 
-* launch a new homework environment
-* clone a repo
-* execute a command
-* examine the output through log files
-* exmaine the deployed OpenShift to ensure that all aspects of the homework were 
+Steps:
+
+1. launch a new homework environment an log into homework env
+
+2. Go to root:
+ “sudo -i”
+
+3. Clone repo:
+“git clone https://github.com/spjkdevoteam/ocp_advanced_deployment_homework”
+
+4. Run script command to install:
+“python ocp_advanced_deployment_homework/one_script_to_control_them_all.py -o deploy”
+
+5. Uninstall (optional):
+“python ocp_advanced_deployment_homework/one_script_to_control_them_all.py -o remove”
+
+6. examine the output through log files
+
+7. exmaine the deployed OpenShift to ensure that all aspects of the homework were
 deployed properly.
 
 

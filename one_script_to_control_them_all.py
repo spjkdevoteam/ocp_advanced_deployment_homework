@@ -3,7 +3,6 @@ import sys
 import json
 import getopt
 from os import system
-from time import sleep
 from os import makedirs
 from subprocess import call
 from subprocess import check_output
@@ -49,9 +48,9 @@ openshift_master_api_port=443
 openshift_master_console_port=443
 
 openshift_master_cluster_method=native
-openshift_master_cluster_hostname=loadbalancer1.5414.internal
-openshift_master_cluster_public_hostname=loadbalancer1.5414.example.opentlc.com
-openshift_master_default_subdomain=apps.5414.example.opentlc.com
+openshift_master_cluster_hostname=loadbalancer1.{guid}.internal
+openshift_master_cluster_public_hostname=loadbalancer1.{guid}.example.opentlc.com
+openshift_master_default_subdomain=apps.{guid}.example.opentlc.com
 openshift_master_overwrite_named_certificates=True
 
 openshift_enable_unsupported_configurations=True
@@ -134,7 +133,7 @@ openshift_logging_storage_volume_name=logging
 openshift_logging_storage_volume_size=10Gi
 openshift_logging_storage_labels={'storage': 'logging'}
 
-# openshift_logging_kibana_hostname=kibana.apps.5414.example.opentlc.com
+# openshift_logging_kibana_hostname=kibana.apps.{guid}.example.opentlc.com
 openshift_logging_es_cluster_size=1
 openshift_logging_es_number_of_replicas=1
 
@@ -198,39 +197,39 @@ nodes
 nfs
 
 [lb]
-loadbalancer1.5414.internal
+loadbalancer1.{guid}.internal
 
 [masters]
-master1.5414.internal
-master2.5414.internal
-master3.5414.internal
+master1.{guid}.internal
+master2.{guid}.internal
+master3.{guid}.internal
 
 [etcd]
-master1.5414.internal
-master2.5414.internal
-master3.5414.internal
+master1.{guid}.internal
+master2.{guid}.internal
+master3.{guid}.internal
 
 [nodes]
 ## These are the masters
-master1.5414.internal openshift_node_group_name='node-config-master'
-master2.5414.internal openshift_node_group_name='node-config-master'
-master3.5414.internal openshift_node_group_name='node-config-master'
+master1.{guid}.internal openshift_node_group_name='node-config-master'
+master2.{guid}.internal openshift_node_group_name='node-config-master'
+master3.{guid}.internal openshift_node_group_name='node-config-master'
 
 ## These are infranodes
-infranode1.5414.internal openshift_node_group_name='node-config-infra'
-infranode2.5414.internal openshift_node_group_name='node-config-infra'
+infranode1.{guid}.internal openshift_node_group_name='node-config-infra'
+infranode2.{guid}.internal openshift_node_group_name='node-config-infra'
 
 ## These are regular nodes
-node1.5414.internal openshift_node_group_name='node-config-compute'
-node2.5414.internal openshift_node_group_name='node-config-compute'
-node3.5414.internal openshift_node_group_name='node-config-compute'
-node4.5414.internal openshift_node_group_name='node-config-compute'
+node1.{guid}.internal openshift_node_group_name='node-config-compute'
+node2.{guid}.internal openshift_node_group_name='node-config-compute'
+node3.{guid}.internal openshift_node_group_name='node-config-compute'
+node4.{guid}.internal openshift_node_group_name='node-config-compute'
 
 ## These are OCS nodes
-# support1.5414.internal openshift_node_group_name='node-config-compute'
+# support1.{guid}.internal openshift_node_group_name='node-config-compute'
 
 [nfs]
-support1.5414.internal
+support1.{guid}.internal
 '''
 
 project_template = '''
@@ -512,11 +511,14 @@ metadata: {}
 '''
 
 
-def write_file(content=None, path=None):
+def write_file(content=None, path=None, guid=''):
     """ Method that writes content to hosts file"""
     if None not in [content, path]:
         with open(path, 'w') as file:
-            file.write(content)
+            if 'hosts' in path:
+                file.write(content.format(guid=guid))
+            else:
+                file.write(content)
             file.close()
 
 
@@ -693,9 +695,9 @@ def commands(fil=None, guid=None):
                 call(s, shell=True)
             print('Verify on following link that Jenkins have successfully '
                   'started \n '
-                  'https://jenkins-cicd.apps.5414.example.opentlc.com \n'
+                  'https://jenkins-cicd.apps.{guid}.example.opentlc.com \n'
                   'make sure to use following credentials: \n '
-                  'admin/homework\n')
+                  'admin/homework\n'.format(guid=guid))
 
 
 def create_nfs_export():
@@ -744,13 +746,13 @@ def create_pv_def_file(volume=None,
 
 def deploy():
     """ Method for deploying cluster"""
+    guid = get_guid()
     pvs_folder = '/root/pvs'
 
-    write_file(content=hosts_content, path='/etc/ansible/hosts')
+    write_file(content=hosts_content, path='/etc/ansible/hosts', guid=guid)
     write_file(content=project_template, path='project_template.yml')
     write_file(content=jenkins_build_config, path='jenkins_build_config.yaml')
 
-    guid = get_guid()
     set_guid_on_all_nodes(guid=guid)
     commands(fil='installation')
     create_nfs_export()

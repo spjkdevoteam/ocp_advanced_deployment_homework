@@ -350,154 +350,162 @@ items:
       type: "JenkinsPipeline"
       jenkinsPipelineStrategy:
         jenkinsfile: |-
-          def version, mvnCmd = "mvn -s configuration/cicd-settings-nexus3.xml"
           pipeline {
-            agent {
-              label 'maven'
+              agent {
+                label 'maven'
+              }
+            
+              stages {
+                stage('Checkout Source') {
+                  steps {
+                    git branch: 'eap-7', url: 'https://github.com/spjkdevoteam/openshift-tasks.git'
+                  }
+                }
+                stage('Build App') {
+                  steps {
+                    sh "mvn clean install -DskipTests"
+                  }
+                }
+                stage('Test App') {
+                  steps {
+                    sh "mvn test"
+                  }
+                }
+                stage('Create Image Builder') {
+                  when {
+                    expression {
+                      openshift.withCluster() {
+                        openshift.withProject("cicd") {
+                          return !openshift.selector("bc", "tasks-bc").exists();
+                        }
+                      }
+                    }
+                  }
+                  steps {
+                    script {
+                      openshift.withCluster() {
+                        openshift.withProject("cicd") {
+                          openshift.newBuild("--name=tasks-bc", "--image-stream=jboss-eap70-openshift:1.5", "--binary")
+                        }
+                      }
+                    }
+                  }
+                }
+                stage('Build Image') {
+                  steps {
+                    sh "rm -rf oc-build && mkdir -p oc-build/deployments && mkdir -p oc-build/configuration"
+                    sh "cp target/openshift-tasks.war oc-build/deployments/ROOT.war"
+                    sh "cp configuration/*.properties oc-build/configuration"
+                    script {
+                      openshift.withCluster() {
+                        openshift.withProject("cicd") {
+                          openshift.selector("bc", "tasks-bc").startBuild("--from-file=oc-build", "--wait")
+                        }
+                      }
+                    }
+                  }
+                }
+            
+            
+            
+                stage('Promote to DEV') {
+                  steps {
+                    openshiftTag (srcStream: 'tasks-bc', srcTag: 'latest',  namespace: "cicd", destinationNamespace: "cicd-dev", destStream: 'tasks-bc', destTag: 'dev')
+                  }
+                }
+                stage('Create DEV') {
+                  when {
+                    expression {
+                      openshift.withCluster() {
+                        openshift.withProject("cicd-dev") {
+                          return !openshift.selector('dc', 'tasks-dev').exists()
+                        }
+                      }
+                    }
+                  }
+                  steps {
+                    script {
+                      openshift.withCluster() {
+                        openshift.withProject("cicd-dev") {
+                          openshift.newApp("tasks-bc:dev", "--name=tasks-dev").narrow('svc').expose()
+                          openshift.set("probe dc/tasks-dev --readiness --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=30 --failure-threshold=10 --period-seconds=10")
+                          openshift.set("probe dc/tasks-dev --liveness --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=30 --failure-threshold=10 --period-seconds=10")
+                        }
+                      }
+                    }
+                  }
+                }
+            
+            
+            
+            
+            
+            
+            
+                stage('Promote to TEST') {
+                  steps {
+                    openshiftTag (srcStream: 'tasks-bc', srcTag: 'latest',  namespace: "cicd", destinationNamespace: "cicd-test", destStream: 'tasks-bc', destTag: 'test')
+                  }
+                }
+                stage('Create TEST') {
+                  when {
+                    expression {
+                      openshift.withCluster() {
+                        openshift.withProject("cicd-test") {
+                          return !openshift.selector('dc', 'tasks-test').exists()
+                        }
+                      }
+                    }
+                  }
+                  steps {
+                    script {
+                      openshift.withCluster() {
+                        openshift.withProject("cicd-test") {
+                          openshift.newApp("tasks-bc:test", "--name=tasks-test").narrow('svc').expose()
+                          openshift.set("probe dc/tasks-test --readiness --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=30 --failure-threshold=10 --period-seconds=10")
+                          openshift.set("probe dc/tasks-test --liveness --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=30 --failure-threshold=10 --period-seconds=10")
+                        }
+                      }
+                    }
+                  }
+                }
+            
+            
+            
+            
+            
+            
+                stage('Promote PROD') {
+                  steps {
+                    openshiftTag (srcStream: 'tasks-bc', srcTag: 'latest',  namespace: "cicd", destinationNamespace: "cicd-prod", destStream: 'tasks-bc', destTag: 'prod')
+                  }
+                }
+                stage('Create PROD') {
+                  when {
+                    expression {
+                      openshift.withCluster() {
+                        openshift.withProject("cicd-prod") {
+                          return !openshift.selector('dc', 'tasks-prod').exists()
+                        }
+                      }
+                    }
+                  }
+                  steps {
+                    script {
+                      openshift.withCluster() {
+                        openshift.withProject("cicd-prod") {
+                          openshift.newApp("tasks-bc:prod", "--name=tasks-prod").narrow('svc').expose()
+                          openshift.set("probe dc/tasks-prod --readiness --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=30 --failure-threshold=10 --period-seconds=10")
+                          openshift.set("probe dc/tasks-prod --liveness --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=30 --failure-threshold=10 --period-seconds=10")
+                          openshift.set("resources dc tasks-prod --limits=cpu=300m,memory=512Mi --requests=cpu=100m,memory=256Mi")
+                          openshift.selector("dc", "tasks-prod").autoscale("--min 1 --max 10 --cpu-percent=80 --name='tasks-hpa'")
+                        }
+                      }
+                    }
+                  }
+                }
+              }
             }
-            stages {
-              stage('Checkout Source') {
-                steps {
-                  git branch: 'eap-7', url: 'https://github.com/spjkdevoteam/openshift-tasks.git'
-                }
-              }
-              stage('Build App') {
-                steps {
-                  sh "mvn clean install -DskipTests"
-                }
-              }
-              stage('Test App') {
-                steps {
-                  sh "mvn test"
-                }
-              }
-              stage('Create Image Builder') {
-                when {
-                  expression {
-                    openshift.withCluster() {
-                      openshift.withProject("cicd") {
-                        return !openshift.selector("bc", "tasks-bc").exists();
-                      }
-                    }
-                  }
-                }
-                steps {
-                  script {
-                    openshift.withCluster() {
-                      openshift.withProject("cicd") {
-                        openshift.newBuild("--name=tasks-bc", "--image-stream=jboss-eap70-openshift:1.5", "--binary")
-                      }
-                    }
-                  }
-                }
-              }
-              stage('Build Image') {
-                steps {
-                  sh "rm -rf oc-build && mkdir -p oc-build/deployments && mkdir -p oc-build/configuration"
-                  sh "cp target/openshift-tasks.war oc-build/deployments/ROOT.war"
-                  sh "cp configuration/*.properties oc-build/configuration"
-                  script {
-                    openshift.withCluster() {
-                      openshift.withProject("cicd") {
-                        openshift.selector("bc", "tasks-bc").startBuild("--from-file=oc-build", "--wait")
-                      }
-                    }
-                  }
-                }
-              }
-              stage('Create DEV') {
-                when {
-                  expression {
-                    openshift.withCluster() {
-                      openshift.withProject("cicd-dev") {
-                        return !openshift.selector('dc', 'tasks-dev').exists()
-                      }
-                    }
-                  }
-                }
-                steps {
-                  script {
-                    openshift.withCluster() {
-                      openshift.withProject("cicd-dev") {
-                        openshift.newApp("tasks-bc:dev", "--name=tasks-dev").narrow('svc').expose()
-                        openshift.set("probe dc/tasks-dev --readiness --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=30 --failure-threshold=10 --period-seconds=10")
-                        openshift.set("probe dc/tasks-dev --liveness --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=30 --failure-threshold=10 --period-seconds=10")
-                      }
-                    }
-                  }
-                }
-              }
-            
-            
-            
-            
-            
-            
-            
-              stage('Promote to TEST') {
-                steps {
-                  openshiftTag (srcStream: 'tasks-bc', srcTag: 'latest',  namespace: "cicd", destinationNamespace: "cicd-test", destStream: 'tasks-bc', destTag: 'test')
-                }
-              }
-              stage('Create TEST') {
-                when {
-                  expression {
-                    openshift.withCluster() {
-                      openshift.withProject("cicd-test") {
-                        return !openshift.selector('dc', 'tasks-test').exists()
-                      }
-                    }
-                  }
-                }
-                steps {
-                  script {
-                    openshift.withCluster() {
-                      openshift.withProject("cicd-test") {
-                        openshift.newApp("tasks-bc:test", "--name=tasks-test").narrow('svc').expose()
-                        openshift.set("probe dc/tasks-test --readiness --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=30 --failure-threshold=10 --period-seconds=10")
-                        openshift.set("probe dc/tasks-test --liveness --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=30 --failure-threshold=10 --period-seconds=10")
-                      }
-                    }
-                  }
-                }
-              }
-            
-            
-            
-            
-            
-            
-              stage('Promote PROD') {
-                steps {
-                  openshiftTag (srcStream: 'tasks-bc', srcTag: 'latest',  namespace: "cicd", destinationNamespace: "cicd-prod", destStream: 'tasks-bc', destTag: 'prod')
-                }
-              }
-              stage('Create PROD') {
-                when {
-                  expression {
-                    openshift.withCluster() {
-                      openshift.withProject("cicd-prod") {
-                        return !openshift.selector('dc', 'tasks-prod').exists()
-                      }
-                    }
-                  }
-                }
-                steps {
-                  script {
-                    openshift.withCluster() {
-                      openshift.withProject("cicd-prod") {
-                        openshift.newApp("tasks-bc:prod", "--name=tasks-prod").narrow('svc').expose()
-                        openshift.set("probe dc/tasks-prod --readiness --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=30 --failure-threshold=10 --period-seconds=10")
-                        openshift.set("probe dc/tasks-prod --liveness --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=30 --failure-threshold=10 --period-seconds=10")
-                        openshift.set("resources dc tasks-prod --limits=cpu=300m,memory=512Mi --requests=cpu=100m,memory=256Mi")
-                        openshift.selector("dc", "tasks-prod").autoscale("--min 1 --max 10 --cpu-percent=80 --name='tasks-hpa'")
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
 
 kind: List
 metadata: {}

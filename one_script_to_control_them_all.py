@@ -516,7 +516,7 @@ def write_file(content=None, path=None, guid=''):
     if None not in [content, path]:
         with open(path, 'w') as file:
             if 'hosts' in path:
-                file.write(content.format(guid=guid))
+                file.write(content.replace('{guid}', guid))
             else:
                 file.write(content)
             file.close()

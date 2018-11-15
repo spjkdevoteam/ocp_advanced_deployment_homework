@@ -786,7 +786,7 @@ def deploy():
 
     commands(fil='multitenancy')
 
-    commands(fil='jenkins')
+    commands(fil='jenkins', guid=guid)
 
 
 def remove():

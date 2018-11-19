@@ -29,9 +29,15 @@ containerized=false
 openshift_disable_check="disk_availability,memory_availability,docker_image_availability"
 
 oreg_url=registry.access.redhat.com/openshift3/ose-${component}:${version}
+oreg_auth_user=5996273|mipam
+oreg_auth_password=eyJhbGciOiJSUzUxMiJ9.eyJzdWIiOiIwYWNiYTg5OGUyMTY0ZGQyOTEzZWFjMTAwYWUyMDBlOCJ9.aAkKvR_NRShgXusrCAEq5ermrle7GwimIwy7cAUjdCEf3BjBSZauxx-pBwVGF59E3MNt3pzMCmKSzUy-2sAPYVN7vn2jKr0Pyd3x4i_kNFJ4Hq7eoNWpIYHwsD8L1xvdwJmMpK5JoHJN4knCG6Olra3yRlIU5ial3LnDQTwgRdPenuZa1VecrNpXvrU3QjNCE1F1Q2WHv2EnQxZZNR3K62MYFJNS6sLaCk2ncCjoriylS6J0c8Vce6cL4RaM8K7C3oGTDa8qOELpg5Iix_zLVqcw6tvQYvAq9i1agdExfNEezXL9ldfBrbDHCwPgwBt6fzWyM0zlWz4JdRUD0ZE7KW0DngMIuMY2HPyTHDLlFCwFFxjeyLR6MbiVSqnSTiajwry0Mnqm9C7BuvdLhpgj8as-Ukeqgbm2TTMV6hQINeB9ca-3kW-ZxDpIKThh3cMshQisVypu91l-PsDDTyebOF9GzfJFsTAYqSebWo8S0A4usRL4JHZWxsqLEF4nZQuckY9TRbdpI2OJfQN12f5j97U1MfMO2MGneXyRsM3pPyWwcE8sqqiKqay5lq7Hcc6eoFHUIjrgMB21SCuOZKooDZYlER0QorYAjv_a2HSyBGJ3wHVVV1YJDDZuBDFgYHRxnyxf_4nU2u3jJF6SDV0voskJUW2hKgUKaowphZzk5gg
+openshift_additional_registry_credentials=[{'host':'registry.connect.redhat.com','user':'5996273|mipam','password':'eyJhbGciOiJSUzUxMiJ9.eyJzdWIiOiIwYWNiYTg5OGUyMTY0ZGQyOTEzZWFjMTAwYWUyMDBlOCJ9.aAkKvR_NRShgXusrCAEq5ermrle7GwimIwy7cAUjdCEf3BjBSZauxx-pBwVGF59E3MNt3pzMCmKSzUy-2sAPYVN7vn2jKr0Pyd3x4i_kNFJ4Hq7eoNWpIYHwsD8L1xvdwJmMpK5JoHJN4knCG6Olra3yRlIU5ial3LnDQTwgRdPenuZa1VecrNpXvrU3QjNCE1F1Q2WHv2EnQxZZNR3K62MYFJNS6sLaCk2ncCjoriylS6J0c8Vce6cL4RaM8K7C3oGTDa8qOELpg5Iix_zLVqcw6tvQYvAq9i1agdExfNEezXL9ldfBrbDHCwPgwBt6fzWyM0zlWz4JdRUD0ZE7KW0DngMIuMY2HPyTHDLlFCwFFxjeyLR6MbiVSqnSTiajwry0Mnqm9C7BuvdLhpgj8as-Ukeqgbm2TTMV6hQINeB9ca-3kW-ZxDpIKThh3cMshQisVypu91l-PsDDTyebOF9GzfJFsTAYqSebWo8S0A4usRL4JHZWxsqLEF4nZQuckY9TRbdpI2OJfQN12f5j97U1MfMO2MGneXyRsM3pPyWwcE8sqqiKqay5lq7Hcc6eoFHUIjrgMB21SCuOZKooDZYlER0QorYAjv_a2HSyBGJ3wHVVV1YJDDZuBDFgYHRxnyxf_4nU2u3jJF6SDV0voskJUW2hKgUKaowphZzk5gg','test_image':'mongodb/enterprise-operator:0.3.2'}]
+
 openshift_examples_modify_imagestreams=true
 
-penshift_enable_unsupported_configurations=True
+openshift_image_tag=v3.11.16
+openshift_release=3.11.16
+openshift_pkg_version=-3.11.16
 
 openshift_node_groups=[{'name': 'node-config-master', 'labels': ['node-role.kubernetes.io/master=true','runtime=docker']}, {'name': 'node-config-infra', 'labels': ['node-role.kubernetes.io/infra=true','runtime=docker']}, {'name': 'node-config-glusterfs', 'labels': ['runtime=docker']}, {'name': 'node-config-compute', 'labels': ['node-role.kubernetes.io/compute=true','runtime=docker'], 'edits': [{ 'key': 'kubeletArguments.pods-per-core','value': ['20']}]}]
 # Configure node kubelet arguments. pods-per-core is valid in OpenShift Origin 1.3 or OpenShift Container Platform 3.3 and later. -> These  need to go into the above
@@ -55,6 +61,8 @@ openshift_master_default_subdomain=apps.{guid}.example.opentlc.com
 openshift_master_overwrite_named_certificates=True
 
 openshift_enable_unsupported_configurations=True
+osm_cluster_network_cidr=10.1.0.0/16
+openshift_portal_net=172.30.0.0/16
 os_sdn_network_plugin_name='redhat/openshift-ovs-multitenant'
 
 
@@ -601,7 +609,7 @@ def commands(fil=None, guid=None):
 
     recycler = [
         'ansible nodes -m shell -a "docker pull registry.access.redhat.com/openshift3/ose-recycler:latest"',
-        'ansible nodes -m shell -a "docker tag registry.access.redhat.com/openshift3/ose-recycler:latest registry.access.redhat.com/openshift3/ose-recycler:v3.10.34"'
+        'ansible nodes -m shell -a "docker tag registry.access.redhat.com/openshift3/ose-recycler:latest registry.access.redhat.com/openshift3/ose-recycler:v3.11.16"'
     ]
 
     multitenancy = [

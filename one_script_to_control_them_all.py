@@ -229,7 +229,6 @@ infranode2.{guid}.internal openshift_node_group_name='node-config-infra' openshi
 node1.{guid}.internal openshift_node_group_name='node-config-compute' openshift_node_problem_detector_install=true
 node2.{guid}.internal openshift_node_group_name='node-config-compute' openshift_node_problem_detector_install=true
 node3.{guid}.internal openshift_node_group_name='node-config-compute' openshift_node_problem_detector_install=true
-node4.{guid}.internal openshift_node_group_name='node-config-compute' openshift_node_problem_detector_install=true
 
 ## These are OCS nodes
 # support1.{guid}.internal openshift_node_group_name='node-config-compute'

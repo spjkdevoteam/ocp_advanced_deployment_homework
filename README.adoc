@@ -1,5 +1,7 @@
 = OpenShift Container Platform - Advanced Deployment - Homework Template
 
+RHOS version 3.10.34
+
 Use the files in this repo to guide you on your way to creating
 a fully automated deployment of OpenShift.
 

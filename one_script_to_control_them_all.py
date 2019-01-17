@@ -49,8 +49,8 @@ openshift_master_api_port=443
 openshift_master_console_port=443
 
 openshift_master_cluster_method=native
-openshift_master_cluster_hostname=loadbalancer1.{guid}.internal
-openshift_master_cluster_public_hostname=loadbalancer1.{guid}.example.opentlc.com
+openshift_master_cluster_hostname=loadbalancer.{guid}.internal
+openshift_master_cluster_public_hostname=loadbalancer.{guid}.example.opentlc.com
 openshift_master_default_subdomain=apps.{guid}.example.opentlc.com
 openshift_master_overwrite_named_certificates=True
 
@@ -224,7 +224,6 @@ infranode2.{guid}.internal openshift_node_group_name='node-config-infra'
 node1.{guid}.internal openshift_node_group_name='node-config-compute'
 node2.{guid}.internal openshift_node_group_name='node-config-compute'
 node3.{guid}.internal openshift_node_group_name='node-config-compute'
-node4.{guid}.internal openshift_node_group_name='node-config-compute'
 
 ## These are OCS nodes
 # support1.{guid}.internal openshift_node_group_name='node-config-compute'

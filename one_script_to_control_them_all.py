@@ -198,7 +198,7 @@ nodes
 nfs
 
 [lb]
-loadbalancer1.{guid}.internal
+loadbalancer.{guid}.internal
 
 [masters]
 master1.{guid}.internal
